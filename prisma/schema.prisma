@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  User              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Comment {
+  id           Int            @id @default(autoincrement())
+  body         String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime
+  authorId     String
+  imageId      Int
+  height       Int            @default(0)
+  width        Int            @default(0)
+  x            Int            @default(0)
+  y            Int            @default(0)
+  User         User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  Image        Image          @relation(fields: [imageId], references: [id])
+  Notification Notification[]
+  TaggedUser   TaggedUser[]
+}
+
+model Image {
+  id          Int       @id @default(autoincrement())
+  url         String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  userId      String
+  Comment     Comment[]
+  User        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id           Int         @id @default(autoincrement())
+  read         Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime
+  commentId    Int
+  taggedUserId Int?
+  Comment      Comment     @relation(fields: [commentId], references: [id])
+  TaggedUser   TaggedUser? @relation(fields: [taggedUserId], references: [id])
+}
+
+model Post {
+  id        String  @id
+  title     String
+  content   String?
+  published Boolean @default(false)
+  userId    String
+  User      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Session {
+  id           String   @id
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model TaggedUser {
+  id           Int            @id @default(autoincrement())
+  commentId    Int
+  userId       String
+  Notification Notification[]
+  Comment      Comment        @relation(fields: [commentId], references: [id])
+  User         User           @relation(fields: [userId], references: [id])
+}
+
+model User {
+  id            String       @id
+  name          String?
+  email         String?      @unique
+  emailVerified DateTime?
+  image         String?
+  commentId     Int?
+  Account       Account[]
+  Comment       Comment[]
+  Image         Image[]
+  Post          Post[]
+  Session       Session[]
+  TaggedUser    TaggedUser[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
